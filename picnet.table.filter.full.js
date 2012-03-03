@@ -611,7 +611,7 @@ if (!COMPILED && goog.ENABLE_DEBUG_LOADER) {
 
   // Allow projects to manage the deps files themselves.
   if (!goog.global.CLOSURE_NO_DEPS) {
-    goog.importScript_(goog.basePath + 'deps.js');
+    //goog.importScript_(goog.basePath + 'deps.js');
   }
 }
 
@@ -15990,6 +15990,51 @@ picnet.ui.filter.TableFilter.prototype.getFilterTable = function() { return (thi
 /**
  * @private
  */
+
+picnet.ui.filter.GenericListFilter.prototype.updateFiltersRow = function(list) {
+	
+  this.list = list;
+  theobject = this;
+  // var ddlElements = goog.dom.getElementsByTagNameAndClass('select', 'filter', this.thead);
+  // if (filterRow.length > 0) return;
+    // var tr = goog.dom.createDom('tr', { 'class': 'filters' });
+    //   	  thistable = picnet.ui.filter.TableFilter.superclass_
+  var tableHeaders = this.list.getElementsByTagName("th")
+  for (var i = 0; i < tableHeaders.length; i++) {
+    var header = tableHeaders[i];
+    var visible = goog.style.isElementShown(header);
+    if (!visible) {
+      continue;
+    }
+	// 
+	//     var headerText = header.getAttribute('filter') === 'false' || !visible ? '' : goog.dom.getTextContent(header);
+	//     var filterClass = header.getAttribute('filter-class');
+	var filterType = header.getAttribute('filter-type');
+	if (filterType === "ddl") {
+		this.updateSelectFilter(i,header);
+	}
+	
+    // /** @type Element */
+    //   var td;
+    //   if (headerText && headerText.length > 0) {
+    // 	  var filter = this.getFilterDom(i, header);
+    //     goog.style.setStyle(filter, 'width', '95%');
+    //     td = goog.dom.createDom('td', null, filter);
+    //   } else {
+    //     td = goog.dom.createDom('td', { }, '');
+    //   }
+    // 
+    //   if (filterClass) {
+    //     goog.dom.classes.add(td, filterClass);
+    //   }
+    //   goog.dom.appendChild(tr, td);
+  }
+  // goog.dom.appendChild(this.thead, tr);
+};
+
+/**
+ * @private
+ */
 picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
   var filterRow = goog.dom.getElementsByTagNameAndClass('tr', 'filters', this.thead);
   if (filterRow.length > 0) return;
@@ -16006,7 +16051,7 @@ picnet.ui.filter.TableFilter.prototype.buildFiltersRow = function() {
     /** @type Element */
     var td;
     if (headerText && headerText.length > 0) {
-      var filter = this.getFilterDom(i, header);
+	  var filter = this.getFilterDom(i, header);
       goog.style.setStyle(filter, 'width', '95%');
       td = goog.dom.createDom('td', null, filter);
     } else {
@@ -16060,6 +16105,41 @@ picnet.ui.filter.TableFilter.prototype.getSelectFilter = function(colIdx, header
 	});
 		
     return select;
+};
+
+/**
+ * @private
+ * @param {number} colIdx
+ * @param {!Element} header
+ * @return {!Element}
+ */
+picnet.ui.filter.GenericListFilter.prototype.updateSelectFilter = function(colIdx, header) {
+    //var select = goog.dom.createDom('select', {'id': this.getListId() + '_filter_' + colIdx,'class':'filter'}, goog.dom.createDom('option', {}, this.options['selectOptionLabel']));
+    var select =  document.getElementById(this.getListId() + '_filter_' + colIdx);
+	var litems = goog.dom.getElementsByTagNameAndClass('tr', null, this.list.tbody)
+	var cells = goog.array.map(litems, function(r) {
+		return r.cells[colIdx];
+	});
+	// Remove header and filters row 
+	cells.shift();
+	cells.shift();
+	var values = [];
+	goog.array.forEach(cells, function(td) {			
+		var txt = goog.string.trim(goog.dom.getTextContent(td));
+	        if (!txt || txt === '&nbsp;' || goog.array.indexOf(values, txt) >= 0) { return; }						
+	        values.push(txt);
+	});
+	values.sort();
+	var optionsLabel = goog.string.trim(goog.dom.getTextContent(select.firstChild));
+	while (select.hasChildNodes()) {
+	    select.removeChild(select.lastChild);
+	}
+	goog.dom.appendChild(select,goog.dom.createDom('option', {}, optionsLabel))
+	goog.array.forEach(values, function(txt) {
+		goog.dom.appendChild(select, goog.dom.createDom('option', {'value':txt.replace('"','&#034;')}, txt));            
+	});
+		
+	    // return select;
 };
 
 /**	 
@@ -16165,6 +16245,7 @@ if (jq) {
 
              plugin.reset = function (list) {
                 picnet.ui.filter.TableFilter.superClass_.resetList.call(tf, list);
+				picnet.ui.filter.TableFilter.superClass_.updateFiltersRow(list);
             };
             plugin.init();
 
